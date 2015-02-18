@@ -1,0 +1,25 @@
+% __________________________________________________________________________
+% A White Matter Lesion-filling approach for accurate brain tissue measurements on SPM
+%
+% Version  1.0. 2014-03-18
+% http://dixie.udg.edu/salem/slfToolbox
+% __________________________________________________________________________
+% Copyright (c) 2014 Sergi Valverde/ Arnau Oliver/ Xavier Lladó 
+%
+% contact: svalverde@eia.udg.edu
+%
+% ==========================================================================
+%
+%
+% The reason for its development was the need to implemented an easy to
+% use open source tool for refilling lesions before brain volume 
+% measurements of MS patients. We integrated the tool in the SPM pipeline 
+% in order to incorporate easily the lesion-filling process in existing 
+% batch processes regarding with brain tissue segmentation. 
+%
+%
+% Please see the manual for details on the usage of this toolbox and the
+% project website (http://dixie.udg.edu/salem/slfToolbox) for news.
+%
+% ==========================================================================
+%

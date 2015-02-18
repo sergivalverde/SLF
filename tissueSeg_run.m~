@@ -1,0 +1,88 @@
+%-----------------------------------------------------------------------
+% function spmNewSegment(input_folder, input_volume, mask_folder)
+% BATCH SPM SEGMENTATION
+% input_folder + input_volume <-   path where the volume to segment is located.
+%
+% function call: matlab -nodisplay -nosplash -nodesktop -nojvm -r "spmNewSegment('./', 'T1', './'); quit"
+%-----------------------------------------------------------------------
+
+function tissueSeg_run(job)
+	
+	[pthT1, namT1, extT1] = spm_fileparts(job.data_T1{1});
+	T1 = fullfile(pthT1, [namT1, extT1]);
+
+	[pthBrainMask, namBrainMask, extBrainMask] = spm_fileparts(job.data_BrainMask{1});
+	BrainMask = fullfile(pthBrainMask, [namBrainMask, extBrainMask]);
+
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%% SPM8 NewSegment %%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ 	matlabbatch{1}.spm.tools.preproc8.channel.vols = {T1};
+	matlabbatch{1}.spm.tools.preproc8.channel.biasreg = 0.0001;
+	matlabbatch{1}.spm.tools.preproc8.channel.biasfwhm = 60;
+	matlabbatch{1}.spm.tools.preproc8.channel.write = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(1).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,1']};
+	matlabbatch{1}.spm.tools.preproc8.tissue(1).ngaus = 2;
+	matlabbatch{1}.spm.tools.preproc8.tissue(1).native = [1 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(1).warped = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(2).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,2']};
+	matlabbatch{1}.spm.tools.preproc8.tissue(2).ngaus = 2;
+	matlabbatch{1}.spm.tools.preproc8.tissue(2).native = [1 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(2).warped = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(3).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,3']};
+	matlabbatch{1}.spm.tools.preproc8.tissue(3).ngaus = 2;
+	matlabbatch{1}.spm.tools.preproc8.tissue(3).native = [1 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(3).warped = [0 0];	
+	matlabbatch{1}.spm.tools.preproc8.tissue(4).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,4']};
+	matlabbatch{1}.spm.tools.preproc8.tissue(4).ngaus = 3;
+	matlabbatch{1}.spm.tools.preproc8.tissue(4).native = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(4).warped = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(5).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,5']};
+	matlabbatch{1}.spm.tools.preproc8.tissue(5).ngaus = 4;
+	matlabbatch{1}.spm.tools.preproc8.tissue(5).native = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(5).warped = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(6).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,6']};
+	matlabbatch{1}.spm.tools.preproc8.tissue(6).ngaus = 2;
+	matlabbatch{1}.spm.tools.preproc8.tissue(6).native = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.tissue(6).warped = [0 0];
+	matlabbatch{1}.spm.tools.preproc8.warp.reg = 4;
+	matlabbatch{1}.spm.tools.preproc8.warp.affreg = 'mni';
+	matlabbatch{1}.spm.tools.preproc8.warp.samp = 3;
+	matlabbatch{1}.spm.tools.preproc8.warp.write = [0 0]; 
+ 
+ 	spm_jobman('run',matlabbatch);
+
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	%%%%%%%%%% Masking the probability maps %%%%%%%%%%%%
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	c1 = load_untouch_nii([pthT1, '/c1', namT1, extT1]);
+	c2 = load_untouch_nii([pthT1, '/c2', namT1, extT1]);
+	c3 = load_untouch_nii([pthT1, '/c3', namT1, extT1]);
+	% masks binary
+    c1.hdr.dime.scl_slope=1;
+	c2.hdr.dime.scl_slope=1;
+	c3.hdr.dime.scl_slope=1;
+
+	mask = load_untouch_nii(BrainMask);
+	seg = zeros(size(mask.img));
+	[~,seg] = max([c1.img(mask.img>0) c2.img(mask.img>0) c3.img(mask.img>0)],[],2);
+    
+	res=zeros(size(mask.img));
+	res(mask.img>0)=seg;    
+	segmTissue=zeros(size(mask.img));
+	segmTissue(res==3)=1;
+	segmTissue(res==1)=2;
+	segmTissue(res==2)=3;
+	c1.img=segmTissue;
+	save_untouch_nii(c1, [pthT1, '/spmSegmTissue.nii']);
+
+	delete([pthT1, '/c*' namT1, extT1]);
+	delete([pthT1, '/', namT1, '_seg8.mat']);
+    
+   	disp(['spmNewSegment: segmentation on volume ', T1, ' done!']);
+end
+
