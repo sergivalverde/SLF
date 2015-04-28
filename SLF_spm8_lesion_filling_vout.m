@@ -18,12 +18,15 @@ function varargout = SLF_spm8_lesion_filling_vout(job)
 %   Copyright 2014 Sergi Valverde/Arnau Oliver/ Xavier Lladó
 %   $Revision: 1.2$     $Date: 06/05/14$
 %       - 1.1: added support for ANALYZE and log
-%	- 1.2: alternative processing to Image Processing toolbox
+%       - 1.2: alternative processing to Image Processing toolbox
+%       - 1.3: updated processing for SPM8/SPM12
 %===============================================================================
 
-% vout argument
+    % vout argument
     varargout{1} = run_job(job);   
+    
 end
+
 
 % run lesion-filling process
 function vout = run_job(job)
@@ -35,6 +38,24 @@ function vout = run_job(job)
     global logfile;
     [pthT1, ~, ~] = spm_fileparts(job.data_T1{1});
     logfile = [pthT1,'/log_execution','.txt'];
+    
+    % check spm version. 
+    % TPM priors are located in a different path in SPM12.
+    % old spm8 newsegment is now the default segmentation tool (spm12)
+    [~, spm_version, ~] = spm_fileparts(spm('dir'));
+    if strcmp(spm_version,'spm12')
+            TMP_path = [spm('dir'),'/tpm/TPM.nii'];
+            p_tools = 'spatial';
+            p_preproc = 'preproc';
+            write_log(logfile, 'Current version: SPM12','');
+        else 
+            TMP_path = [spm('dir'),'/toolbox/Seg/TPM.nii'];
+            p_tools = 'tools';
+            p_preproc = 'preproc8';
+            write_log(logfile, 'Current version: SPm8','');
+    end
+
+
     
     % check input parameters. The number of T1_images should be equal to the
     % number of brain masks and lesion masks.
@@ -119,53 +140,53 @@ function vout = run_job(job)
         
             % if external brainmask, we load the tmp brainmasked image
             if job.brainmaskproc.brainmask == 0
-                matlabbatch{1}.spm.tools.preproc8.channel.vols = {fullfile(pthT1, [nameT1, '.nii'])};
+                matlabbatch{1}.spm.(p_tools).(p_preproc).channel.vols = {fullfile(pthT1, [nameT1, '.nii'])};
                 write_log(logfile,['     SPM_PREPROC --> loading tmp T1-w image without skull'],'');
             else
-                matlabbatch{1}.spm.tools.preproc8.channel.vols = {job.data_T1{im}};
+                matlabbatch{1}.spm.(p_tools).(p_preproc).channel.vols = {job.data_T1{im}};
                 write_log(logfile, '     SPM_PREPROC --> Loading T1-w image with skull. Computing brain-mask with SPM8','');
             end
             
             %bias processing: if biasreg > 0, we consider internally the
             % resulting spm m* file
-            matlabbatch{1}.spm.tools.preproc8.channel.biasreg = job.biasproc.biasreg;
-            matlabbatch{1}.spm.tools.preproc8.channel.biasfwhm = job.biasproc.biasfwhm; 
+            matlabbatch{1}.spm.(p_tools).(p_preproc).channel.biasreg = job.biasproc.biasreg;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).channel.biasfwhm = job.biasproc.biasfwhm; 
             if job.biasproc.biasreg > 0
-                matlabbatch{1}.spm.tools.preproc8.channel.write = [1 1];
+                matlabbatch{1}.spm.(p_tools).(p_preproc).channel.write = [1 1];
             else
-                matlabbatch{1}.spm.tools.preproc8.channel.write = job.biasproc.write;
+                matlabbatch{1}.spm.(p_tools).(p_preproc).channel.write = job.biasproc.write;
             end
             
             % segmentation process
             
-            matlabbatch{1}.spm.tools.preproc8.tissue(1).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,1']};
-            matlabbatch{1}.spm.tools.preproc8.tissue(1).ngaus = 2;
-            matlabbatch{1}.spm.tools.preproc8.tissue(1).native = [1 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(1).warped = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(2).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,2']};
-            matlabbatch{1}.spm.tools.preproc8.tissue(2).ngaus = 2;
-            matlabbatch{1}.spm.tools.preproc8.tissue(2).native = [1 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(2).warped = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(3).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,3']};
-            matlabbatch{1}.spm.tools.preproc8.tissue(3).ngaus = 2;
-            matlabbatch{1}.spm.tools.preproc8.tissue(3).native = [1 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(3).warped = [0 0];	
-            matlabbatch{1}.spm.tools.preproc8.tissue(4).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,4']};
-            matlabbatch{1}.spm.tools.preproc8.tissue(4).ngaus = 3;
-            matlabbatch{1}.spm.tools.preproc8.tissue(4).native = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(4).warped = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(5).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,5']};
-            matlabbatch{1}.spm.tools.preproc8.tissue(5).ngaus = 4;
-            matlabbatch{1}.spm.tools.preproc8.tissue(5).native = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(5).warped = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(6).tpm = {[spm('dir') '/toolbox/Seg/TPM.nii,6']};
-            matlabbatch{1}.spm.tools.preproc8.tissue(6).ngaus = 2;
-            matlabbatch{1}.spm.tools.preproc8.tissue(6).native = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.tissue(6).warped = [0 0];
-            matlabbatch{1}.spm.tools.preproc8.warp.reg = 4;
-            matlabbatch{1}.spm.tools.preproc8.warp.affreg = 'mni';
-            matlabbatch{1}.spm.tools.preproc8.warp.samp = 3;
-            matlabbatch{1}.spm.tools.preproc8.warp.write = [0 0]; 
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(1).tpm = {[TMP_path,',1']};
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(1).ngaus = 2;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(1).native = [1 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(1).warped = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(2).tpm = {[TMP_path,',2']};
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(2).ngaus = 2;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(2).native = [1 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(2).warped = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(3).tpm = {[TMP_path,',3']};
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(3).ngaus = 2;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(3).native = [1 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(3).warped = [0 0];	
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(4).tpm = {[TMP_path,',4']}; 
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(4).ngaus = 3;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(4).native = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(4).warped = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(5).tpm = {[TMP_path,',5']}; 
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(5).ngaus = 4;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(5).native = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(5).warped = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(6).tpm = {[TMP_path,',6']}; 
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(6).ngaus = 2;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(6).native = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).tissue(6).warped = [0 0];
+            matlabbatch{1}.spm.(p_tools).(p_preproc).warp.reg = 4;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).warp.affreg = 'mni';
+            matlabbatch{1}.spm.(p_tools).(p_preproc).warp.samp = 3;
+            matlabbatch{1}.spm.(p_tools).(p_preproc).warp.write = [0 0]; 
             write_log(logfile,['     SPM_PREPROC --> Running SPM8 internally '],'');
             spm_jobman('run',matlabbatch);
         
