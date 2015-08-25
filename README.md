@@ -7,7 +7,7 @@ Currently, SLF is currently available to download both as a ready-to-use Matlab 
 
 Please check the Requirements tab before installing it.
 
-Please browse the method webpage for more information (http://dixie.udg.edu/slfToolbox).
+Please browse the SALEM webpage for more information (http://eia.udg.edu/salem/slfToolbox).
 
 ## Installation as a SPM library
 
