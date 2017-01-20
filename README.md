@@ -27,3 +27,8 @@ The program requires two input images:
 * The program is able to do bias correction and skull-stripping, via SPM8/SPM12 internal procedures. If no binary brain mask is provided, the program will attempt to compute the binary brainmask before the lesion-filling process. 
 
 The resulted lesion-filled image will be saved in the same directory of the input T1-w image. Optionally, also bias corrected images and binray brain mask can be saved.
+
+# Reference
+If you use this method, please reference it as:
+
+S. Valverde, A. Oliver, X. Lladó. A white matter lesion-filling approach to improve brain tissue volume measurements. NeuroImage: Clinical, (6), pp 86-92, 2014.
