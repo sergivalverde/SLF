@@ -30,6 +30,5 @@ The resulted lesion-filled image will be saved in the same directory of the inpu
 
 # Reference
 If you use this method, please reference it as:
-```
+
 S. Valverde, A. Oliver, X. Lladó. A white matter lesion-filling approach to improve brain tissue volume measurements. NeuroImage: Clinical, (6), pp 86-92, 2014.
-```
